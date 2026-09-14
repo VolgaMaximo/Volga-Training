@@ -36,7 +36,8 @@ const materials:Material[]=[
 ];
 
 export default function Materials(){
- const[open,setOpen]=useState<number|null>(1);const[selected,setSelected]=useState('starters');
+ const[selected,setSelected]=useState('starters');
+ const[activeCard,setActiveCard]=useState<Material|null>(null);
  const current=sections.find(s=>s.key===selected)||sections[0];
  return <main>
   <div className="brand">VOLGA · COCINA DEL ESTE · ОБУЧЕНИЕ</div>
@@ -49,19 +50,21 @@ export default function Materials(){
     <div className="card">
       <span className="sectionEyebrow">ВИДЕОУРОК</span>
       <h2>Закуски</h2>
-      <p>Обучающая часть начинается после приветствия MILA — с отметки 1:13.</p>
       <SegmentVideo src={ENTRANTES_VIDEO} start={73} className="trainingVideo"/>
     </div>
 
     <div className="materialsGrid">{materials.map(m=><div className="card materialCard" key={m.id}>
-      <button className="materialTitle" onClick={()=>setOpen(open===m.id?null:m.id)}>{m.title}<span>{open===m.id?'−':'+'}</span></button>
-      {open===m.id&&<div className="materialBody">
-        <img className="materialImage" src={m.image} alt={m.title} onError={(e)=>{e.currentTarget.style.display='none';const p=e.currentTarget.nextElementSibling as HTMLElement|null;if(p)p.style.display='block'}}/>
-        <p style={{display:'none'}}>{m.body}</p>
-        {m.id===1&&<p className="warning">Важно: в паштете из куриной печени используется обычная nata, не nata agria. Исправленная карточка заменит текущую версию.</p>}
-      </div>}
+      <button className="materialTitle" onClick={()=>setActiveCard(m)}>{m.title}<span>↗</span></button>
     </div>)}</div>
   </>}
+
+  {activeCard&&<div className="cardModal" role="dialog" aria-modal="true" aria-label={activeCard.title} onClick={()=>setActiveCard(null)}>
+    <button className="cardModalClose" onClick={()=>setActiveCard(null)} aria-label="Закрыть">×</button>
+    <div className="cardModalInner" onClick={e=>e.stopPropagation()}>
+      <img className="cardModalImage" src={activeCard.image} alt={activeCard.title}/>
+    </div>
+  </div>}
+
   <div className="card"><Link className="button" href="/">← НАЗАД</Link></div>
  </main>
 }
