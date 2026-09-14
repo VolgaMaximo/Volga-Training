@@ -1,6 +1,7 @@
 'use client';
 import {useState} from 'react';
 import {useRouter} from 'next/navigation';
+import Link from 'next/link';
 
 export default function Home(){
   const[name,setName]=useState('');
@@ -16,8 +17,12 @@ export default function Home(){
   }
   return <main>
     <div className="brand">VOLGA · COCINA DEL ESTE · TRAINING</div>
-    <h1>ЭКЗАМЕН ДЛЯ ОФИЦИАНТА</h1>
-    <div className="card introGrid">
+    <h1>ОБУЧЕНИЕ И ЭКЗАМЕН</h1>
+    <div className="homeActions">
+      <div className="card actionCard"><h2>Учебные материалы</h2><p>Повтори блюда, ключевые формулировки и важные детали перед проверкой.</p><Link className="button secondary" href="/materials">ПОВТОРИТЬ МАТЕРИАЛ</Link></div>
+      <div className="card actionCard"><h2>Экзамен</h2><p>Теория + пять ситуаций с гостем с записью ответа.</p><a className="button" href="#exam">ПЕРЕЙТИ К ЭКЗАМЕНУ</a></div>
+    </div>
+    <div id="exam" className="card introGrid">
       <div>
         <h2>Привет, я MILA.</h2>
         <p>Перед началом посмотри вводный ролик полностью. Ниже правила продублированы текстом.</p>
