@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
 import {supabase} from '../lib/supabase';
+import {ACADEMY_COVER} from '../lib/academyCover';
 import SegmentVideo from '../components/SegmentVideo';
 
 type Employee={id:string;name:string};
@@ -11,6 +12,7 @@ const ENTRANTES_VIDEO='https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec3
 const EXAM_VIDEO='https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec374d4a1caa748ea9358325ff/f9d66fa1f46fbaf1a2bb47e206b697f3.mp4?Expires=1789999987&Signature=jgS8WfwqDtyJmZxpC~KTVa-gPuNr4dgYmeHudbGXABPgE7GuQgQe9SgHGhUCYD6hMkokNetbt6ERZnGlsoi~cdk37f4NBxtH602hMUn1916v9rWLsSL4UevBXkK6fdnM8FtBBlM2ua9Ko8Jea4LXeAXiNrtHCk4bJVOdnJ023DJYfOQGy6XKQFsMa3Y44iwcng6Fyr7d29pCc4Q~UJeKHig13tZjKhGcUdQVpEHGyStba19pIsK78rfuN8wcU4G86zgp08WukAwYBiwEmZtGxfCZTGfuP68R-uBvJWMxvyMcJM03SVarrBhP8MP44cRTqVyK83HOaZTlrGVGxVoeKA__&Key-Pair-Id=K38HBHX5LX3X2H';
 
 export default function Home(){
+  const[entered,setEntered]=useState(false);
   const[employees,setEmployees]=useState<Employee[]>([]);
   const[employeeId,setEmployeeId]=useState('');
   const[code,setCode]=useState('');
@@ -19,7 +21,12 @@ export default function Home(){
   const[error,setError]=useState('');
   const router=useRouter();
 
-  useEffect(()=>{(async()=>{if(!supabase)return;const{data}=await supabase.rpc('list_employees_public');if(Array.isArray(data))setEmployees(data as Employee[])})()},[]);
+  useEffect(()=>{
+    if(sessionStorage.getItem('volga_academy_entered')==='1')setEntered(true);
+    (async()=>{if(!supabase)return;const{data}=await supabase.rpc('list_employees_public');if(Array.isArray(data))setEmployees(data as Employee[])})();
+  },[]);
+
+  function openAcademy(){sessionStorage.setItem('volga_academy_entered','1');setEntered(true)}
 
   async function start(){
     if(!employeeId||!code||!topic||!supabase)return;
@@ -36,9 +43,16 @@ export default function Home(){
     router.push(data.status==='oral'?'/oral':'/quiz');
   }
 
+  if(!entered)return <div className="academyGate">
+    <div className="academyGateArt">
+      <img src={ACADEMY_COVER} alt="VOLGA ACADEMIA — знания дают уверенность и создают лучший сервис"/>
+      <button className="academyGateButton" aria-label="Открыть двери академии" onClick={openAcademy}>ОТКРЫТЬ ДВЕРИ АКАДЕМИИ</button>
+    </div>
+  </div>;
+
   return <main>
-    <div className="brand">КОМАНДА VOLGA · ЗНАНИЯ ПОМОГАЮТ</div>
-    <h1>АКАДЕМИЯ VOLGA</h1>
+    <div className="brand">VOLGA ACADEMIA</div>
+    <h1>ОБУЧЕНИЕ И ЭКЗАМЕН</h1>
 
     <div className="card introGrid">
       <div><h2>Привет, я MILA.</h2></div>
