@@ -13,9 +13,9 @@ export const quizQuestions:QuizQuestion[]=[
 {id:'q10',question:'¿Qué caracteriza la textura del paté de caballa ahumada?',options:['Totalmente lisa y homogénea','Crujiente','Suave y cremosa, pero conserva fibras de la caballa','Gelatinosa'],correct:2},
 {id:'q11',question:'¿Qué palabra es especialmente útil para explicar la Shuba?',options:['CAPAS','PICANTE','FRITO','DULCE'],correct:0},
 {id:'q12',question:'¿Qué debemos decir si preguntan si hacemos el pan nosotros?',options:['Sí, todo se hornea en VOLGA','No; trabajamos con dos panaderías artesanas que usan masa madre y fermentaciones largas','No sabemos','El pan es industrial congelado'],correct:1},
-{id:'q13',question:'¿Qué lleva el paté de hígado de pollo?',options:['Hígado de pollo, cebolla y nata agria','Hígado de cerdo y mantequilla','Pollo asado y queso','Hígado de pollo y tomate'],correct:0},
+{id:'q13',question:'¿Qué lleva el paté de hígado de pollo?',options:['Hígado de pollo, cebolla y nata','Hígado de cerdo y mantequilla','Pollo asado y queso','Hígado de pollo y tomate'],correct:0},
 {id:'q14',question:'¿Cómo se sirve la versión actual de los espadines ahumados de Riga?',options:['Solos sobre pan','En huevos rellenos sobre pan de centeno','Con pasta','En sopa'],correct:1},
-{id:'q15',question:'¿Qué nombre ruso usamos para las setas nameko?',options:['Boletus','Champiñones','Opята / opiata','Shiitake'],correct:2}
+{id:'q15',question:'¿Cómo llamamos en ruso a las setas nameko?',options:['Boletus','Champiñones','Опята','Shiitake'],correct:2}
 ];
 
 export const oralScenarios=[
