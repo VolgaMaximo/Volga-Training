@@ -9,6 +9,9 @@ export default function MaterialFullscreen(){
   useEffect(()=>{
     if(!location.pathname.startsWith('/materials')) return;
 
+    document.querySelectorAll<HTMLElement>('.materialBody').forEach(el=>el.style.display='none');
+    document.querySelectorAll<HTMLElement>('.materialTitle span').forEach(el=>el.textContent='↗');
+
     let overlay:HTMLDivElement|null=null;
     const close=()=>{overlay?.remove();overlay=null;document.body.style.overflow=''};
     const open=(src:string,alt:string)=>{
@@ -34,7 +37,7 @@ export default function MaterialFullscreen(){
       const i=all.indexOf(btn);
       if(i<0||!cards[i])return;
       e.preventDefault();e.stopPropagation();
-      open(cards[i],btn.textContent?.replace(/[+−]/g,'').trim()||'Учебная карточка');
+      open(cards[i],btn.textContent?.replace('↗','').trim()||'Учебная карточка');
     };
     const key=(e:KeyboardEvent)=>{if(e.key==='Escape')close()};
     document.addEventListener('click',handler,true);document.addEventListener('keydown',key);
