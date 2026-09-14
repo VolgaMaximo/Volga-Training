@@ -2,8 +2,7 @@
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 
-type Material={id:number;title:string;body:string};
-
+type Material={id:number;title:string;body:string;category?:string;image_url?:string|null};
 type Section={key:string;label:string;active:boolean};
 
 const sections:Section[]=[
@@ -34,16 +33,17 @@ const fallback:Material[]=[
 ];
 
 export default function Materials(){
- const[items,setItems]=useState<Material[]>(fallback); const[open,setOpen]=useState<number|null>(1); const[selected,setSelected]=useState('starters');
+ const[items,setItems]=useState<Material[]>(fallback);const[open,setOpen]=useState<number|null>(1);const[selected,setSelected]=useState('starters');
  useEffect(()=>{fetch('/api/materials').then(r=>r.ok?r.json():Promise.reject()).then(d=>{if(Array.isArray(d)&&d.length)setItems(d)}).catch(()=>{})},[]);
- const current=sections.find(s=>s.key===selected) || sections[0];
+ const current=sections.find(s=>s.key===selected)||sections[0];
+ const visible=items.filter(m=>(m.category||'starters')===selected);
  return <main>
-   <div className="brand">VOLGA · COCINA DEL ESTE · TRAINING</div>
-   <h1>УЧЕБНЫЕ МАТЕРИАЛЫ</h1>
-   <p>Выбери раздел и повтори материал перед экзаменом.</p>
-   <div className="sectionTabs">{sections.map(s=><button key={s.key} className={`sectionTab ${selected===s.key?'selected':''}`} disabled={!s.active} onClick={()=>s.active&&setSelected(s.key)}>{s.label}{!s.active&&<span className="comingSoon">СКОРО</span>}</button>)}</div>
-   <div className="sectionHeader"><div><span className="sectionEyebrow">ТЕКУЩИЙ РАЗДЕЛ</span><h2>{current.label}</h2></div><span className="sectionCount">{items.length} КАРТОЧЕК</span></div>
-   {selected==='starters'&&<><p className="small">Сейчас готовим раздел «Закуски». Полные визуальные карточки будут добавлены сюда вместо сокращённого текста.</p><div className="materialsGrid">{items.map(m=><div className="card materialCard" key={m.id}><button className="materialTitle" onClick={()=>setOpen(open===m.id?null:m.id)}>{m.title}<span>{open===m.id?'−':'+'}</span></button>{open===m.id&&<div className="materialBody">{m.body.split('\n').map((x,i)=><p key={i}>{x||' '}</p>)}</div>}</div>)}</div></>}
-   <div className="card"><Link className="button" href="/">← НАЗАД</Link></div>
+  <div className="brand">VOLGA · COCINA DEL ESTE · ОБУЧЕНИЕ</div>
+  <h1>УЧЕБНЫЕ МАТЕРИАЛЫ</h1>
+  <p>Выбери раздел и повтори материал перед экзаменом.</p>
+  <div className="sectionTabs">{sections.map(s=><button key={s.key} className={`sectionTab ${selected===s.key?'selected':''}`} disabled={!s.active} onClick={()=>s.active&&setSelected(s.key)}>{s.label}{!s.active&&<span className="comingSoon">СКОРО</span>}</button>)}</div>
+  <div className="sectionHeader"><div><span className="sectionEyebrow">ТЕКУЩИЙ РАЗДЕЛ</span><h2>{current.label}</h2></div><span className="sectionCount">{visible.length} КАРТОЧЕК</span></div>
+  {selected==='starters'&&<div className="materialsGrid">{visible.map(m=><div className="card materialCard" key={m.id}><button className="materialTitle" onClick={()=>setOpen(open===m.id?null:m.id)}>{m.title}<span>{open===m.id?'−':'+'}</span></button>{open===m.id&&<div className="materialBody">{m.image_url&&<img className="materialImage" src={m.image_url} alt={m.title}/>} {!m.image_url&&m.body.split('\n').map((x,i)=><p key={i}>{x||' '}</p>)}{m.id===1&&<p className="warning">Исправление для обучения: в паштете из куриной печени используется обычная nata, не nata agria.</p>}</div>}</div>)}</div>}
+  <div className="card"><Link className="button" href="/">← НАЗАД</Link></div>
  </main>
 }
