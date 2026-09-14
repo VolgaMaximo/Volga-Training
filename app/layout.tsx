@@ -1,4 +1,9 @@
 import './globals.css';
 import type {Metadata} from 'next';
-export const metadata:Metadata={title:'VOLGA Training',description:'Staff training and examination'};
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="es"><body>{children}</body></html>}
+import CopyRefresh from '../components/CopyRefresh';
+
+export const metadata:Metadata={title:'Академия VOLGA',description:'Обучение и экзамены команды VOLGA'};
+
+export default function RootLayout({children}:{children:React.ReactNode}){
+  return <html lang="ru"><body><CopyRefresh/>{children}</body></html>
+}
