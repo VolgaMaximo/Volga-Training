@@ -4,6 +4,17 @@ import Link from 'next/link';
 
 type Material={id:number;title:string;body:string};
 
+type Section={key:string;label:string;active:boolean};
+
+const sections:Section[]=[
+{key:'starters',label:'ЗАКУСКИ',active:true},
+{key:'soups',label:'СУПЫ',active:false},
+{key:'mains',label:'ГОРЯЧЕЕ',active:false},
+{key:'desserts',label:'ДЕСЕРТЫ',active:false},
+{key:'drinks',label:'НАПИТКИ',active:false},
+{key:'service',label:'СЕРВИС',active:false}
+];
+
 const fallback:Material[]=[
 {id:1,title:'PATÉ DE HÍGADO DE POLLO',body:'Ingredientes: hígado de pollo, cebolla y nata. Textura suave y cremosa.\n\nQUÉ DECIR AL CLIENTE: Es un paté delicado de hígado de pollo con cebolla y nata, muy cremoso y de sabor equilibrado.\n\nOJO: no decir que lleva nata agria.'},
 {id:2,title:'PATÉ DE CABALLA AHUMADA',body:'Caballa ahumada, nata agria, limón, cebollino y cebolla verde. Cremoso, pero conserva fibras naturales del pescado.'},
@@ -23,7 +34,16 @@ const fallback:Material[]=[
 ];
 
 export default function Materials(){
- const[items,setItems]=useState<Material[]>(fallback); const[open,setOpen]=useState<number|null>(1);
+ const[items,setItems]=useState<Material[]>(fallback); const[open,setOpen]=useState<number|null>(1); const[selected,setSelected]=useState('starters');
  useEffect(()=>{fetch('/api/materials').then(r=>r.ok?r.json():Promise.reject()).then(d=>{if(Array.isArray(d)&&d.length)setItems(d)}).catch(()=>{})},[]);
- return <main><div className="brand">VOLGA · COCINA DEL ESTE · TRAINING</div><h1>ПОВТОРИТЬ МАТЕРИАЛ</h1><p>Открой карточку блюда и повтори ключевые детали перед экзаменом.</p><div className="materialsGrid">{items.map(m=><div className="card materialCard" key={m.id}><button className="materialTitle" onClick={()=>setOpen(open===m.id?null:m.id)}>{m.title}<span>{open===m.id?'−':'+'}</span></button>{open===m.id&&<div className="materialBody">{m.body.split('\n').map((x,i)=><p key={i}>{x||' '}</p>)}</div>}</div>)}</div><div className="card"><Link className="button" href="/">← НАЗАД</Link></div></main>
+ const current=sections.find(s=>s.key===selected) || sections[0];
+ return <main>
+   <div className="brand">VOLGA · COCINA DEL ESTE · TRAINING</div>
+   <h1>УЧЕБНЫЕ МАТЕРИАЛЫ</h1>
+   <p>Выбери раздел и повтори материал перед экзаменом.</p>
+   <div className="sectionTabs">{sections.map(s=><button key={s.key} className={`sectionTab ${selected===s.key?'selected':''}`} disabled={!s.active} onClick={()=>s.active&&setSelected(s.key)}>{s.label}{!s.active&&<span className="comingSoon">СКОРО</span>}</button>)}</div>
+   <div className="sectionHeader"><div><span className="sectionEyebrow">ТЕКУЩИЙ РАЗДЕЛ</span><h2>{current.label}</h2></div><span className="sectionCount">{items.length} КАРТОЧЕК</span></div>
+   {selected==='starters'&&<><p className="small">Сейчас готовим раздел «Закуски». Полные визуальные карточки будут добавлены сюда вместо сокращённого текста.</p><div className="materialsGrid">{items.map(m=><div className="card materialCard" key={m.id}><button className="materialTitle" onClick={()=>setOpen(open===m.id?null:m.id)}>{m.title}<span>{open===m.id?'−':'+'}</span></button>{open===m.id&&<div className="materialBody">{m.body.split('\n').map((x,i)=><p key={i}>{x||' '}</p>)}</div>}</div>)}</div></>}
+   <div className="card"><Link className="button" href="/">← НАЗАД</Link></div>
+ </main>
 }
