@@ -3,7 +3,6 @@ import {useEffect,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
 import {supabase} from '../lib/supabase';
-import {ACADEMY_COVER} from '../lib/academyCover';
 import SegmentVideo from '../components/SegmentVideo';
 
 type Employee={id:string;name:string};
@@ -45,7 +44,7 @@ export default function Home(){
 
   if(!entered)return <div className="academyGate">
     <div className="academyGateArt">
-      <img src={ACADEMY_COVER} alt="VOLGA ACADEMIA — знания дают уверенность и создают лучший сервис"/>
+      <img src="/academy-cover.webp" alt="VOLGA ACADEMIA — знания дают уверенность и создают лучший сервис"/>
       <button className="academyGateButton" aria-label="Открыть двери академии" onClick={openAcademy}>ОТКРЫТЬ ДВЕРИ АКАДЕМИИ</button>
     </div>
   </div>;
