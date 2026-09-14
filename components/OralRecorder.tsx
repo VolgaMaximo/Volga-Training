@@ -71,6 +71,8 @@ export default function OralRecorder({scenario,scenarioId,scenarioIndex,attemptI
    if(uploadError)throw uploadError;
    const{error:dbError}=await supabase.from('oral_answers').upsert({attempt_id:attemptId,staff_name:staffName,scenario_id:scenarioId,scenario_text:scenario,scenario_index:scenarioIndex,recording_path:path},{onConflict:'attempt_id,scenario_index'});
    if(dbError)throw dbError;
+   const{error:lockError}=await supabase.rpc('mark_oral_answered',{p_attempt_id:attemptId,p_scenario_id:scenarioId});
+   if(lockError)throw lockError;
    streamRef.current?.getTracks().forEach(t=>t.stop());
    setPhase('done');
   }catch(e){console.error(e);setPhase('save_error');setError('Не удалось сохранить запись. Сам ответ уже записан — переснимать его не нужно.')}
@@ -84,7 +86,7 @@ export default function OralRecorder({scenario,scenarioId,scenarioIndex,attemptI
    {phase==='recording'&&<><div className="timer">{recordLeft}</div><p className="center"><b>ИДЁТ ЗАПИСЬ · ОДНА ПОПЫТКА</b></p><button onClick={stopRecording}>ЗАКОНЧИТЬ ОТВЕТ</button><p className="small">30 секунд — максимум. Если закончил раньше, нажми кнопку.</p></>}
    {phase==='uploading'&&<p>Сохраняем ответ…</p>}
    {phase==='save_error'&&<><p className="warning">{error}</p><button onClick={saveRecording}>ПОВТОРИТЬ СОХРАНЕНИЕ</button></>}
-   {phase==='done'&&<><p className="success">Ответ сохранён.</p><button onClick={onComplete}>ПЕРЕЙТИ К СЛЕДУЮЩЕЙ СИТУАЦИИ</button></>}
+   {phase==='done'&&<><p className="success">Ответ сохранён. Перезаписать его уже нельзя.</p><button onClick={onComplete}>ПЕРЕЙТИ К СЛЕДУЮЩЕЙ СИТУАЦИИ</button></>}
   </>}
   {error&&phase!=='save_error'&&<p className="warning">{error}</p>}
  </div>
