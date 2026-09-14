@@ -1,4 +1,46 @@
 'use client';
 import {useState} from 'react';
 import {useRouter} from 'next/navigation';
-export default function Home(){const[name,setName]=useState('');const[watched,setWatched]=useState(false);const[videoMissing,setVideoMissing]=useState(false);const router=useRouter();function start(){if(!name.trim()||!watched)return;sessionStorage.setItem('volga_staff_name',name.trim());sessionStorage.removeItem('volga_quiz_score');sessionStorage.removeItem('volga_oral_done');router.push('/quiz')}return <main><div className="brand">VOLGA · COCINA DEL ESTE · TRAINING</div><h1>EXAMEN DE SALA</h1><div className="card"><h2>Hola, soy MILA.</h2><p>Antes de empezar, mira el vídeo completo. El examen tiene dos partes: conocimientos y situaciones reales con clientes.</p><video controls playsInline onEnded={()=>setWatched(true)} onError={()=>setVideoMissing(true)} src="/mila-intro.mp4">Tu navegador no puede reproducir el vídeo.</video>{videoMissing?<><p className="warning">MODO PRUEBA: el vídeo de MILA todavía no está cargado.</p><button onClick={()=>setWatched(true)}>CONTINUAR MODO PRUEBA</button></>:<p className="small">El examen se desbloquea al terminar el vídeo.</p>}</div><div className="card"><label>Tu nombre</label><input value={name} onChange={e=>setName(e.target.value)} placeholder="Nombre y apellido"/><div style={{height:14}}/><div className="warning">En la parte oral tendrás 10 segundos para pensar y 30 segundos para responder. Solo hay una grabación por pregunta.</div><div style={{height:14}}/><button disabled={!name.trim()||!watched} onClick={start}>EMPEZAR EXAMEN</button></div></main>}
+
+export default function Home(){
+  const[name,setName]=useState('');
+  const[watched,setWatched]=useState(false);
+  const[videoMissing,setVideoMissing]=useState(false);
+  const router=useRouter();
+  function start(){
+    if(!name.trim()||!watched)return;
+    sessionStorage.setItem('volga_staff_name',name.trim());
+    sessionStorage.removeItem('volga_quiz_score');
+    sessionStorage.removeItem('volga_oral_done');
+    router.push('/quiz');
+  }
+  return <main>
+    <div className="brand">VOLGA · COCINA DEL ESTE · TRAINING</div>
+    <h1>ЭКЗАМЕН ДЛЯ ОФИЦИАНТА</h1>
+    <div className="card introGrid">
+      <div>
+        <h2>Привет, я MILA.</h2>
+        <p>Перед началом посмотри вводный ролик полностью. Ниже правила продублированы текстом.</p>
+        <div className="rules">
+          <p><b>1.</b> Сначала — тест по блюдам. Для допуска к устной части нужно набрать минимум <b>85%</b>.</p>
+          <p><b>2.</b> Затем — <b>5 случайных ситуаций</b>, как в реальном разговоре с гостем.</p>
+          <p><b>3.</b> На каждую ситуацию даётся <b>10 секунд на подготовку</b>, после чего запись начинается автоматически.</p>
+          <p><b>4.</b> На ответ — <b>30 секунд</b>. Запись только одна, переснять нельзя.</p>
+          <p><b>5.</b> Не нужно заучивать текст дословно. Важно объяснить блюдо естественно, правильно и понятно гостю.</p>
+        </div>
+      </div>
+      <div className="milaVideoWrap">
+        <video className="milaVideo" controls playsInline onEnded={()=>setWatched(true)} onError={()=>setVideoMissing(true)} src="/mila-intro.mp4">Браузер не может воспроизвести видео.</video>
+        {videoMissing?<><p className="warning">Тестовый режим: новый ролик MILA ещё не загружен на сайт.</p><button onClick={()=>setWatched(true)}>ПРОДОЛЖИТЬ В ТЕСТОВОМ РЕЖИМЕ</button></>:<p className="small">После просмотра ролика экзамен разблокируется.</p>}
+      </div>
+    </div>
+    <div className="card">
+      <label>Имя сотрудника</label>
+      <input value={name} onChange={e=>setName(e.target.value)} placeholder="Имя и фамилия"/>
+      <div style={{height:14}}/>
+      <div className="warning">Устная часть: 10 секунд подумать, 30 секунд ответить, одна попытка.</div>
+      <div style={{height:14}}/>
+      <button disabled={!name.trim()||!watched} onClick={start}>НАЧАТЬ ЭКЗАМЕН</button>
+    </div>
+  </main>
+}
