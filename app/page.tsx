@@ -35,8 +35,8 @@ export default function Home(){
         </div>
       </div>
       <div className="milaVideoWrap">
-        <video className="milaVideo" controls playsInline onEnded={()=>setWatched(true)} onError={()=>setVideoMissing(true)} src="/mila-intro.mp4">Браузер не может воспроизвести видео.</video>
-        {videoMissing?<><p className="warning">Тестовый режим: новый ролик MILA ещё не загружен на сайт.</p><button onClick={()=>setWatched(true)}>ПРОДОЛЖИТЬ В ТЕСТОВОМ РЕЖИМЕ</button></>:<p className="small">После просмотра ролика экзамен разблокируется.</p>}
+        <video className="milaVideo" controls playsInline onEnded={()=>setWatched(true)} onError={()=>{setVideoMissing(true);setWatched(true)}} src="/mila-intro.mp4">Браузер не может воспроизвести видео.</video>
+        {videoMissing?<p className="warning">Ролик MILA пока не загружен. Для проверки механики экзамен уже разблокирован.</p>:<p className="small">После просмотра ролика экзамен разблокируется.</p>}
       </div>
     </div>
     <div className="card">
