@@ -14,6 +14,7 @@ export default function Home(){
   const[employees,setEmployees]=useState<Employee[]>([]);
   const[employeeId,setEmployeeId]=useState('');
   const[code,setCode]=useState('');
+  const[topic,setTopic]=useState('starters');
   const[busy,setBusy]=useState(false);
   const[error,setError]=useState('');
   const router=useRouter();
@@ -21,7 +22,7 @@ export default function Home(){
   useEffect(()=>{(async()=>{if(!supabase)return;const{data}=await supabase.rpc('list_employees_public');if(Array.isArray(data))setEmployees(data as Employee[])})()},[]);
 
   async function start(){
-    if(!employeeId||!code||!supabase)return;
+    if(!employeeId||!code||!topic||!supabase)return;
     setBusy(true);setError('');
     const{data,error:e}=await supabase.rpc('begin_or_resume_exam',{p_employee_id:employeeId,p_code:code});
     setBusy(false);
@@ -29,26 +30,23 @@ export default function Home(){
     if(!data?.ok){setError(data?.error||'Не удалось начать экзамен.');return}
     sessionStorage.setItem('volga_attempt_id',data.attempt_id);
     sessionStorage.setItem('volga_staff_name',data.name);
+    sessionStorage.setItem('volga_exam_topic',topic);
     sessionStorage.removeItem('volga_quiz_score');
     sessionStorage.removeItem('volga_oral_done');
     router.push(data.status==='oral'?'/oral':'/quiz');
   }
 
   return <main>
-    <div className="brand">VOLGA · COCINA DEL ESTE · ОБУЧЕНИЕ</div>
-    <h1>ОБУЧЕНИЕ И ЭКЗАМЕН</h1>
+    <div className="brand">КОМАНДА VOLGA · ЗНАНИЯ ПОМОГАЮТ</div>
+    <h1>АКАДЕМИЯ VOLGA</h1>
 
     <div className="card introGrid">
-      <div>
-        <span className="sectionEyebrow">ДОБРО ПОЖАЛОВАТЬ</span>
-        <h2>Привет, я MILA.</h2>
-        <p>Короткое приветствие перед началом обучения. Здесь первые 1:13 большого ролика по закускам.</p>
-      </div>
+      <div><h2>Привет, я MILA.</h2></div>
       <div className="milaVideoWrap"><SegmentVideo src={ENTRANTES_VIDEO} start={0} end={73}/></div>
     </div>
 
     <div className="homeActions">
-      <div className="card actionCard"><h2>Учебные материалы</h2><p>Повтори блюда, ключевые формулировки и важные детали перед проверкой.</p><Link className="button secondary" href="/materials">ПОВТОРИТЬ МАТЕРИАЛ</Link></div>
+      <div className="card actionCard"><h2>Учебные материалы</h2><p>Повтори учебный материал.</p><Link className="button secondary" href="/materials">ПОВТОРИТЬ МАТЕРИАЛ</Link></div>
       <div className="card actionCard"><h2>Экзамен</h2><p>Теория и пять ситуаций с гостем с записью ответа.</p><a className="button" href="#exam">ПЕРЕЙТИ К ЭКЗАМЕНУ</a></div>
     </div>
 
@@ -69,6 +67,16 @@ export default function Home(){
     </div>
 
     <div className="card">
+      <label>Тема экзамена</label>
+      <select value={topic} onChange={e=>setTopic(e.target.value)}>
+        <option value="starters">Закуски</option>
+        <option value="soups" disabled>Супы — скоро</option>
+        <option value="mains" disabled>Горячее — скоро</option>
+        <option value="desserts" disabled>Десерты — скоро</option>
+        <option value="drinks" disabled>Напитки — скоро</option>
+        <option value="service" disabled>Сервис — скоро</option>
+      </select>
+      <div style={{height:14}}/>
       <label>Сотрудник</label>
       <select value={employeeId} onChange={e=>setEmployeeId(e.target.value)}>
         <option value="">Выбери своё имя</option>
@@ -80,7 +88,7 @@ export default function Home(){
       <div style={{height:14}}/>
       <div className="warning">Одна активная попытка. Если экзамен уже начат, система вернёт тебя в неё. Новую попытку разрешает администратор.</div>
       <div style={{height:14}}/>
-      <button disabled={!employeeId||!code||busy} onClick={start}>{busy?'ПРОВЕРЯЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
+      <button disabled={!employeeId||!code||!topic||busy} onClick={start}>{busy?'ПРОВЕРЯЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
       {error&&<p className="warning">{error}</p>}
     </div>
   </main>
