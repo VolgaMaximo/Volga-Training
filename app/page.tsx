@@ -70,6 +70,5 @@ export default function Home(){
       <button disabled={!employeeId||!code||busy} onClick={start}>{busy?'ПРОВЕРЯЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
       {error&&<p className="warning">{error}</p>}
     </div>
-    <p className="small"><Link href="/admin">Администратор → результаты и видеоответы</Link></p>
   </main>
 }
