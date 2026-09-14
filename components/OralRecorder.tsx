@@ -1,6 +1,91 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {supabase} from '../lib/supabase';
-type Props={scenario:string;scenarioIndex:number;staffName:string;onComplete:()=>void};
-type Phase='ready'|'prep'|'recording'|'uploading'|'done';
-export default function OralRecorder({scenario,scenarioIndex,staffName,onComplete}:Props){const[phase,setPhase]=useState<Phase>('ready');const[countdown,setCountdown]=useState(10);const[recordLeft,setRecordLeft]=useState(30);const[error,setError]=useState('');const videoRef=useRef<HTMLVideoElement>(null);const streamRef=useRef<MediaStream|null>(null);const recorderRef=useRef<MediaRecorder|null>(null);const chunksRef=useRef<Blob[]>([]);useEffect(()=>()=>{streamRef.current?.getTracks().forEach(t=>t.stop())},[]);async function prepareCamera(){setError('');try{const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});streamRef.current=stream;if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.muted=true;await videoRef.current.play()}startPrep()}catch{setError('Necesitamos permiso para usar cámara y micrófono.')}}function startPrep(){setPhase('prep');setCountdown(10);let n=10;const timer=setInterval(()=>{n-=1;setCountdown(n);if(n<=0){clearInterval(timer);startRecording()}},1000)}function startRecording(){const stream=streamRef.current;if(!stream)return;chunksRef.current=[];const type=MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')?'video/webm;codecs=vp9,opus':'video/webm';const recorder=new MediaRecorder(stream,{mimeType:type});recorderRef.current=recorder;recorder.ondataavailable=e=>{if(e.data.size>0)chunksRef.current.push(e.data)};recorder.onstop=saveRecording;recorder.start();setPhase('recording');setRecordLeft(30);let n=30;const timer=setInterval(()=>{n-=1;setRecordLeft(n);if(n<=0){clearInterval(timer);if(recorder.state!=='inactive')recorder.stop()}},1000)}async function saveRecording(){setPhase('uploading');const blob=new Blob(chunksRef.current,{type:'video/webm'});const stamp=Date.now();const safeName=staffName.toLowerCase().replace(/[^a-z0-9]+/gi,'-');const path=`${safeName}/${stamp}-scenario-${scenarioIndex+1}.webm`;try{if(supabase){const{error:uploadError}=await supabase.storage.from('oral-recordings').upload(path,blob,{contentType:'video/webm',upsert:false});if(uploadError)throw uploadError;await supabase.from('oral_answers').insert({staff_name:staffName,scenario_text:scenario,scenario_index:scenarioIndex,recording_path:path})}else{const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=path.split('/').pop()||'answer.webm';a.click();URL.revokeObjectURL(url)}setPhase('done');setTimeout(onComplete,800)}catch(e){console.error(e);setError('No se pudo guardar la grabación. Avísalo al responsable.')}}return <div className="card"><video ref={videoRef} playsInline autoPlay/>{phase==='ready'&&<><p className="warning">Al pulsar, verás la situación y empezará el tiempo de preparación. No hay segunda toma.</p><button onClick={prepareCamera}>MOSTRAR SITUACIÓN</button></>}{phase!=='ready'&&<><h2>{scenario}</h2>{phase==='prep'&&<><div className="timer">{countdown}</div><p style={{textAlign:'center'}}>Piensa tu respuesta. La grabación empezará automáticamente.</p></>}{phase==='recording'&&<><div className="timer">{recordLeft}</div><p style={{textAlign:'center'}}><b>GRABANDO · UNA SOLA TOMA</b></p></>}{phase==='uploading'&&<p>Guardando respuesta…</p>}{phase==='done'&&<p className="success">Respuesta guardada.</p>}</>}{error&&<p className="warning">{error}</p>}</div>}
+
+type Props={scenario:string;scenarioId:number;scenarioIndex:number;attemptId:string;staffName:string;onComplete:()=>void};
+type Phase='ready'|'prep'|'recording'|'uploading'|'done'|'save_error';
+
+function chooseMime(){
+ const types=['video/mp4;codecs=h264,aac','video/mp4','video/webm;codecs=vp8,opus','video/webm;codecs=vp9,opus','video/webm'];
+ return types.find(t=>typeof MediaRecorder!=='undefined'&&MediaRecorder.isTypeSupported(t))||'';
+}
+
+export default function OralRecorder({scenario,scenarioId,scenarioIndex,attemptId,staffName,onComplete}:Props){
+ const[phase,setPhase]=useState<Phase>('ready');
+ const[countdown,setCountdown]=useState(10);
+ const[recordLeft,setRecordLeft]=useState(30);
+ const[error,setError]=useState('');
+ const videoRef=useRef<HTMLVideoElement>(null);
+ const streamRef=useRef<MediaStream|null>(null);
+ const recorderRef=useRef<MediaRecorder|null>(null);
+ const chunksRef=useRef<Blob[]>([]);
+ const blobRef=useRef<Blob|null>(null);
+ const timerRef=useRef<ReturnType<typeof setInterval>|null>(null);
+ const mimeRef=useRef('');
+
+ useEffect(()=>()=>{if(timerRef.current)clearInterval(timerRef.current);streamRef.current?.getTracks().forEach(t=>t.stop())},[]);
+
+ async function prepareCamera(){
+  setError('');
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});
+   streamRef.current=stream;
+   if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.muted=true;await videoRef.current.play()}
+   startPrep();
+  }catch{setError('Нужен доступ к камере и микрофону. Разреши его в настройках браузера и попробуй ещё раз.')}
+ }
+
+ function startPrep(){
+  setPhase('prep');setCountdown(10);let n=10;
+  timerRef.current=setInterval(()=>{n-=1;setCountdown(n);if(n<=0){if(timerRef.current)clearInterval(timerRef.current);startRecording()}},1000)
+ }
+
+ function startRecording(){
+  const stream=streamRef.current;if(!stream)return;
+  chunksRef.current=[];blobRef.current=null;
+  const mime=chooseMime();mimeRef.current=mime;
+  const recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+  recorderRef.current=recorder;
+  recorder.ondataavailable=e=>{if(e.data.size>0)chunksRef.current.push(e.data)};
+  recorder.onstop=()=>{const type=mimeRef.current||chunksRef.current[0]?.type||'video/webm';blobRef.current=new Blob(chunksRef.current,{type});saveRecording()};
+  recorder.start(250);
+  setPhase('recording');setRecordLeft(30);let n=30;
+  timerRef.current=setInterval(()=>{n-=1;setRecordLeft(n);if(n<=0){if(timerRef.current)clearInterval(timerRef.current);stopRecording()}},1000)
+ }
+
+ function stopRecording(){
+  if(timerRef.current){clearInterval(timerRef.current);timerRef.current=null}
+  const recorder=recorderRef.current;
+  if(recorder&&recorder.state!=='inactive')recorder.stop();
+ }
+
+ async function saveRecording(){
+  const blob=blobRef.current;if(!blob)return;
+  setPhase('uploading');setError('');
+  const ext=blob.type.includes('mp4')?'mp4':'webm';
+  const safeName=staffName.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,'-');
+  const path=`${attemptId}/${safeName}-situation-${scenarioIndex+1}.${ext}`;
+  try{
+   if(!supabase)throw new Error('Supabase unavailable');
+   const{error:uploadError}=await supabase.storage.from('oral-recordings').upload(path,blob,{contentType:blob.type||`video/${ext}`,upsert:true});
+   if(uploadError)throw uploadError;
+   const{error:dbError}=await supabase.from('oral_answers').upsert({attempt_id:attemptId,staff_name:staffName,scenario_id:scenarioId,scenario_text:scenario,scenario_index:scenarioIndex,recording_path:path},{onConflict:'attempt_id,scenario_index'});
+   if(dbError)throw dbError;
+   streamRef.current?.getTracks().forEach(t=>t.stop());
+   setPhase('done');
+  }catch(e){console.error(e);setPhase('save_error');setError('Не удалось сохранить запись. Сам ответ уже записан — переснимать его не нужно.')}
+ }
+
+ return <div className="card">
+  <video ref={videoRef} playsInline autoPlay/>
+  {phase==='ready'&&<><p className="warning">После нажатия появится ситуация. Будет 10 секунд на подготовку, затем запись начнётся автоматически. Перезаписи нет.</p><button onClick={prepareCamera}>ПОКАЗАТЬ СИТУАЦИЮ</button></>}
+  {phase!=='ready'&&<><h2>{scenario}</h2>
+   {phase==='prep'&&<><div className="timer">{countdown}</div><p className="center">Подумай над ответом. Запись начнётся автоматически.</p></>}
+   {phase==='recording'&&<><div className="timer">{recordLeft}</div><p className="center"><b>ИДЁТ ЗАПИСЬ · ОДНА ПОПЫТКА</b></p><button onClick={stopRecording}>ЗАКОНЧИТЬ ОТВЕТ</button><p className="small">30 секунд — максимум. Если закончил раньше, нажми кнопку.</p></>}
+   {phase==='uploading'&&<p>Сохраняем ответ…</p>}
+   {phase==='save_error'&&<><p className="warning">{error}</p><button onClick={saveRecording}>ПОВТОРИТЬ СОХРАНЕНИЕ</button></>}
+   {phase==='done'&&<><p className="success">Ответ сохранён.</p><button onClick={onComplete}>ПЕРЕЙТИ К СЛЕДУЮЩЕЙ СИТУАЦИИ</button></>}
+  </>}
+  {error&&phase!=='save_error'&&<p className="warning">{error}</p>}
+ </div>
+}
