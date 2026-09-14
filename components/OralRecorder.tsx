@@ -22,13 +22,18 @@ export default function OralRecorder({scenario,scenarioId,scenarioIndex,attemptI
  const blobRef=useRef<Blob|null>(null);
  const timerRef=useRef<ReturnType<typeof setInterval>|null>(null);
  const mimeRef=useRef('');
+ const uploadPathRef=useRef<string|null>(null);
+ const uploadedRef=useRef(false);
 
  useEffect(()=>()=>{if(timerRef.current)clearInterval(timerRef.current);streamRef.current?.getTracks().forEach(t=>t.stop())},[]);
 
  async function prepareCamera(){
   setError('');
   try{
-   const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:true});
+   const stream=await navigator.mediaDevices.getUserMedia({
+    video:{facingMode:'user',width:{ideal:720},height:{ideal:1280}},
+    audio:true
+   });
    streamRef.current=stream;
    if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.muted=true;await videoRef.current.play()}
    startPrep();
@@ -42,9 +47,12 @@ export default function OralRecorder({scenario,scenarioId,scenarioIndex,attemptI
 
  function startRecording(){
   const stream=streamRef.current;if(!stream)return;
-  chunksRef.current=[];blobRef.current=null;
+  chunksRef.current=[];blobRef.current=null;uploadPathRef.current=null;uploadedRef.current=false;
   const mime=chooseMime();mimeRef.current=mime;
-  const recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+  const opts:any={videoBitsPerSecond:1200000,audioBitsPerSecond:96000};
+  if(mime)opts.mimeType=mime;
+  let recorder:MediaRecorder;
+  try{recorder=new MediaRecorder(stream,opts)}catch{recorder=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream)}
   recorderRef.current=recorder;
   recorder.ondataavailable=e=>{if(e.data.size>0)chunksRef.current.push(e.data)};
   recorder.onstop=()=>{const type=mimeRef.current||chunksRef.current[0]?.type||'video/webm';blobRef.current=new Blob(chunksRef.current,{type});saveRecording()};
@@ -63,19 +71,30 @@ export default function OralRecorder({scenario,scenarioId,scenarioIndex,attemptI
   const blob=blobRef.current;if(!blob)return;
   setPhase('uploading');setError('');
   const ext=blob.type.includes('mp4')?'mp4':'webm';
-  const safeName=staffName.toLowerCase().replace(/[^a-zа-яё0-9]+/gi,'-');
-  const path=`${attemptId}/${safeName}-situation-${scenarioIndex+1}.${ext}`;
+  if(!uploadPathRef.current)uploadPathRef.current=`${attemptId}/situation-${scenarioIndex+1}-${Date.now()}.${ext}`;
+  const path=uploadPathRef.current;
   try{
    if(!supabase)throw new Error('Supabase unavailable');
-   const{error:uploadError}=await supabase.storage.from('oral-recordings').upload(path,blob,{contentType:blob.type||`video/${ext}`,upsert:true});
-   if(uploadError)throw uploadError;
+
+   if(!uploadedRef.current){
+    const{error:uploadError}=await supabase.storage.from('oral-recordings').upload(path,blob,{contentType:blob.type||`video/${ext}`,upsert:false});
+    if(uploadError)throw new Error(`upload:${uploadError.message}`);
+    uploadedRef.current=true;
+   }
+
    const{error:dbError}=await supabase.from('oral_answers').upsert({attempt_id:attemptId,staff_name:staffName,scenario_id:scenarioId,scenario_text:scenario,scenario_index:scenarioIndex,recording_path:path},{onConflict:'attempt_id,scenario_index'});
-   if(dbError)throw dbError;
+   if(dbError)throw new Error(`database:${dbError.message}`);
+
    const{error:lockError}=await supabase.rpc('mark_oral_answered',{p_attempt_id:attemptId,p_scenario_id:scenarioId});
-   if(lockError)throw lockError;
+   if(lockError)throw new Error(`finalize:${lockError.message}`);
+
    streamRef.current?.getTracks().forEach(t=>t.stop());
    setPhase('done');
-  }catch(e){console.error(e);setPhase('save_error');setError('Не удалось сохранить запись. Сам ответ уже записан — переснимать его не нужно.')}
+  }catch(e){
+   console.error('oral-save-error',e);
+   setPhase('save_error');
+   setError('Не удалось сохранить запись. Сам ответ уже записан — переснимать его не нужно. Нажми «Повторить сохранение».');
+  }
  }
 
  return <div className="card">
