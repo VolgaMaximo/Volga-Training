@@ -17,18 +17,24 @@ export default function Home(){
   const[employeeId,setEmployeeId]=useState('');
   const[staffName,setStaffName]=useState('');
   const[code,setCode]=useState('');
+  const[sessionToken,setSessionToken]=useState('');
   const[topic,setTopic]=useState('starters');
   const[busy,setBusy]=useState(false);
   const[error,setError]=useState('');
   const router=useRouter();
 
   useEffect(()=>{
-    const access=sessionStorage.getItem('volga_staff_access')==='1';
-    if(access){
+    const token=sessionStorage.getItem('volga_staff_session')||'';
+    const id=sessionStorage.getItem('volga_staff_id')||'';
+    const name=sessionStorage.getItem('volga_staff_name')||'';
+    if(token&&id){
       setDoorOpened(true);
       setAuthenticated(true);
-      setEmployeeId(sessionStorage.getItem('volga_staff_id')||'');
-      setStaffName(sessionStorage.getItem('volga_staff_name')||'');
+      setSessionToken(token);
+      setEmployeeId(id);
+      setStaffName(name);
+    }else{
+      sessionStorage.removeItem('volga_staff_access');
     }
     (async()=>{if(!supabase)return;const{data}=await supabase.rpc('list_employees_public');if(Array.isArray(data))setEmployees(data as Employee[])})();
   },[]);
@@ -41,35 +47,51 @@ export default function Home(){
     const{data,error:e}=await supabase.rpc('verify_staff_access',{p_employee_id:employeeId,p_code:code});
     setBusy(false);
     if(e){setError('Не удалось проверить доступ. Попробуй ещё раз.');return}
-    if(!data?.ok){setError(data?.error||'Неверный PIN.');return}
+    if(!data?.ok||!data?.session_token){setError(data?.error||'Неверный PIN.');return}
     const name=data.name||employees.find(e=>e.id===employeeId)?.name||'';
+    const token=String(data.session_token);
     setStaffName(name);
+    setSessionToken(token);
+    setCode('');
     setAuthenticated(true);
     sessionStorage.setItem('volga_staff_access','1');
     sessionStorage.setItem('volga_staff_id',employeeId);
     sessionStorage.setItem('volga_staff_name',name);
+    sessionStorage.setItem('volga_staff_session',token);
   }
 
   function logout(){
     sessionStorage.removeItem('volga_staff_access');
     sessionStorage.removeItem('volga_staff_id');
     sessionStorage.removeItem('volga_staff_name');
+    sessionStorage.removeItem('volga_staff_session');
     sessionStorage.removeItem('volga_attempt_id');
     sessionStorage.removeItem('volga_exam_topic');
-    setAuthenticated(false);setDoorOpened(true);setEmployeeId('');setStaffName('');setCode('');setError('');
+    setAuthenticated(false);setDoorOpened(true);setEmployeeId('');setStaffName('');setSessionToken('');setCode('');setError('');
   }
 
   async function start(){
-    if(!employeeId||!code||!topic||!supabase)return;
+    if(!sessionToken||!topic||!supabase)return;
     setBusy(true);setError('');
-    const{data,error:e}=await supabase.rpc('begin_or_resume_exam',{p_employee_id:employeeId,p_code:code});
+    const{data,error:e}=await supabase.rpc('begin_or_resume_exam_session',{p_session_token:sessionToken,p_topic:topic});
     setBusy(false);
     if(e){setError('Не удалось начать экзамен. Попробуй ещё раз.');return}
-    if(!data?.ok){setError(data?.error||'Не удалось начать экзамен.');return}
+    if(!data?.ok){
+      const message=data?.error||'Не удалось начать экзамен.';
+      setError(message);
+      if(message.includes('Сессия истекла')){
+        sessionStorage.removeItem('volga_staff_session');
+        sessionStorage.removeItem('volga_staff_access');
+        setSessionToken('');
+        setAuthenticated(false);
+      }
+      return;
+    }
     sessionStorage.setItem('volga_attempt_id',data.attempt_id);
     sessionStorage.setItem('volga_staff_name',data.name);
     sessionStorage.setItem('volga_exam_topic',topic);
     sessionStorage.removeItem('volga_quiz_score');
+    sessionStorage.removeItem('volga_quiz_passed');
     sessionStorage.removeItem('volga_oral_done');
     router.push(data.status==='oral'?'/oral':'/quiz');
   }
@@ -144,10 +166,9 @@ export default function Home(){
       </select>
       <div style={{height:14}}/>
       <p><b>Сотрудник:</b> {staffName}</p>
-      {!code&&<><label>Подтверди личный PIN для начала экзамена</label><input type="password" inputMode="numeric" value={code} onChange={e=>setCode(e.target.value)} placeholder="4 цифры"/><div style={{height:14}}/></>}
       <div className="warning">Одна активная попытка. Если экзамен уже начат, система вернёт тебя в неё. Новую попытку разрешает администратор.</div>
       <div style={{height:14}}/>
-      <button disabled={!employeeId||!code||!topic||busy} onClick={start}>{busy?'ПРОВЕРЯЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
+      <button disabled={!sessionToken||!topic||busy} onClick={start}>{busy?'ОТКРЫВАЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
       {error&&<p className="warning">{error}</p>}
     </div>
   </main>
