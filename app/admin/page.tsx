@@ -4,7 +4,7 @@ import {supabase} from '../../lib/supabase';
 
 type StaffRow={employee_id:string;name:string;can_retry:boolean;attempt_id:string|null;status:string|null;quiz_score:number|null;created_at:string|null;completed_at:string|null};
 type Attempt={attempt_id:string;employee_id:string;staff_name:string;topic:string;status:string;quiz_score:number|null;created_at:string;completed_at:string|null;video_count:number};
-type Answer={id:string;attempt_id:string;employee_id:string;staff_name:string;topic:string;scenario_text:string;scenario_index:number;recording_path:string;created_at:string};
+type Answer={id:string;attempt_id:string|null;employee_id:string|null;staff_name:string;topic:string;scenario_text:string;scenario_index:number;recording_path:string;created_at:string};
 
 const TOPICS:{[k:string]:string}={starters:'ЗАКУСКИ',soups:'СУПЫ',mains:'ГОРЯЧЕЕ',desserts:'ДЕСЕРТЫ',drinks:'НАПИТКИ',service:'СЕРВИС'};
 const topicLabel=(k:string)=>TOPICS[k]||k||'БЕЗ ТЕМЫ';
@@ -61,17 +61,20 @@ export default function AdminPage(){
   if(errorEdge||!data?.ok){setError(data?.error||'Не удалось удалить видео.');return}
   setNotice('Видео удалено из хранилища и из списка.');await loadAll();
  }
- async function deleteAttempt(attemptId:string,staffName:string){
-  const count=answers.filter(a=>a.attempt_id===attemptId).length;
+ async function deleteAttempt(attemptId:string|null,staffName:string,anchorCreatedAt:string){
+  const anchor=new Date(anchorCreatedAt).getTime();
+  const legacyMatches=answers.filter(a=>a.attempt_id===null&&a.staff_name===staffName&&Math.abs(new Date(a.created_at).getTime()-anchor)<=30*60*1000);
+  const count=attemptId?answers.filter(a=>a.attempt_id===attemptId).length:legacyMatches.length;
   if(!supabase||!count||!confirm(`Удалить все видео этой попытки (${count}) у ${staffName}? Это действие нельзя отменить.`))return;
-  setBusyId(`attempt-${attemptId}`);setError('');
-  const{data,error:errorEdge}=await supabase.functions.invoke('admin-recordings',{body:{action:'delete_attempt',code,attempt_id:attemptId}});
+  const busyKey=attemptId?`attempt-${attemptId}`:`legacy-${staffName}-${anchorCreatedAt}`;
+  setBusyId(busyKey);setError('');
+  const{data,error:errorEdge}=await supabase.functions.invoke('admin-recordings',{body:{action:'delete_attempt',code,attempt_id:attemptId,staff_name:staffName,anchor_created_at:anchorCreatedAt}});
   setBusyId('');
   if(errorEdge||!data?.ok){setError(data?.error||'Не удалось очистить видео попытки.');return}
   setNotice(`Удалено видео: ${data.count||count}.`);await loadAll();
  }
 
- const topics=useMemo(()=>[...new Set(attempts.map(a=>a.topic).filter(Boolean))],[attempts]);
+ const topics=useMemo(()=>[...new Set([...attempts.map(a=>a.topic),...answers.map(a=>a.topic)].filter(Boolean))],[attempts,answers]);
  const filteredAttempts=attempts.filter(a=>(topicFilter==='all'||a.topic===topicFilter)&&(staffFilter==='all'||a.employee_id===staffFilter));
  const filteredAnswers=answers.filter(a=>(topicFilter==='all'||a.topic===topicFilter)&&(staffFilter==='all'||a.employee_id===staffFilter));
  const groupedAttempts=useMemo(()=>{
@@ -93,13 +96,13 @@ export default function AdminPage(){
   {tab==='exams'&&<>
    <div className="card adminFilters"><div><label>Раздел</label><select value={topicFilter} onChange={e=>setTopicFilter(e.target.value)}><option value="all">Все разделы</option>{topics.map(t=><option key={t} value={t}>{topicLabel(t)}</option>)}</select></div><div><label>Сотрудник</label><select value={staffFilter} onChange={e=>setStaffFilter(e.target.value)}><option value="all">Все сотрудники</option>{staff.map(s=><option key={s.employee_id} value={s.employee_id}>{s.name}</option>)}</select></div></div>
    {Object.keys(groupedAttempts).length===0&&<div className="card">Попыток по выбранному фильтру нет.</div>}
-   {Object.entries(groupedAttempts).map(([topic,items])=><section key={topic} className="adminTopicSection"><div className="sectionHeader"><div><span className="sectionEyebrow">РАЗДЕЛ</span><h2>{topicLabel(topic)}</h2></div><span className="sectionCount">{items.length} ПОПЫТОК</span></div>{items.map(a=><div className="card" key={a.attempt_id}><div className="adminCardHead"><div><h2>{a.staff_name}</h2><p className="small">{fmt(a.created_at)}</p></div><span className="adminBadge">{statusLabel(a.status)}</span></div><div className="adminStats"><span>Теория <b>{a.quiz_score==null?'—':`${a.quiz_score}%`}</b></span><span>Видео <b>{a.video_count}</b></span></div>{a.video_count>0&&<button className="dangerButton" disabled={busyId===`attempt-${a.attempt_id}`} onClick={()=>deleteAttempt(a.attempt_id,a.staff_name)}>УДАЛИТЬ ВСЕ ВИДЕО ПОПЫТКИ</button>}</div>)}</section>)}
+   {Object.entries(groupedAttempts).map(([topic,items])=><section key={topic} className="adminTopicSection"><div className="sectionHeader"><div><span className="sectionEyebrow">РАЗДЕЛ</span><h2>{topicLabel(topic)}</h2></div><span className="sectionCount">{items.length} ПОПЫТОК</span></div>{items.map(a=><div className="card" key={a.attempt_id}><div className="adminCardHead"><div><h2>{a.staff_name}</h2><p className="small">{fmt(a.created_at)}</p></div><span className="adminBadge">{statusLabel(a.status)}</span></div><div className="adminStats"><span>Теория <b>{a.quiz_score==null?'—':`${a.quiz_score}%`}</b></span><span>Видео <b>{a.video_count}</b></span></div>{a.video_count>0&&<button className="dangerButton" disabled={busyId===`attempt-${a.attempt_id}`} onClick={()=>deleteAttempt(a.attempt_id,a.staff_name,a.created_at)}>УДАЛИТЬ ВСЕ ВИДЕО ПОПЫТКИ</button>}</div>)}</section>)}
   </>}
 
   {tab==='video'&&<>
    <div className="card adminFilters"><div><label>Раздел</label><select value={topicFilter} onChange={e=>setTopicFilter(e.target.value)}><option value="all">Все разделы</option>{topics.map(t=><option key={t} value={t}>{topicLabel(t)}</option>)}</select></div><div><label>Сотрудник</label><select value={staffFilter} onChange={e=>setStaffFilter(e.target.value)}><option value="all">Все сотрудники</option>{staff.map(s=><option key={s.employee_id} value={s.employee_id}>{s.name}</option>)}</select></div></div>
    {filteredAnswers.length===0&&<div className="card">Записанных ответов по выбранному фильтру нет.</div>}
-   {filteredAnswers.map(a=><div className="card adminVideoCard" key={a.id}><div className="adminCardHead"><div><span className="sectionEyebrow">{topicLabel(a.topic)}</span><h2>{a.staff_name}</h2><p className="small">Ситуация {a.scenario_index+1} · {fmt(a.created_at)}</p></div></div><p>{a.scenario_text}</p>{links[a.id]?<video controls playsInline src={links[a.id]}/>:<p className="warning">Видео пока недоступно.</p>}<div className="adminActionRow"><button className="dangerButton" disabled={busyId===a.id} onClick={()=>deleteOne(a)}>УДАЛИТЬ ВИДЕО</button><button className="dangerOutlineButton" disabled={busyId===`attempt-${a.attempt_id}`} onClick={()=>deleteAttempt(a.attempt_id,a.staff_name)}>ОЧИСТИТЬ ВСЮ ПОПЫТКУ</button></div></div>)}
+   {filteredAnswers.map(a=>{const busyKey=a.attempt_id?`attempt-${a.attempt_id}`:`legacy-${a.staff_name}-${a.created_at}`;return <div className="card adminVideoCard" key={a.id}><div className="adminCardHead"><div><span className="sectionEyebrow">{topicLabel(a.topic)}</span><h2>{a.staff_name}</h2><p className="small">Ситуация {a.scenario_index+1} · {fmt(a.created_at)}</p></div></div><p>{a.scenario_text}</p>{links[a.id]?<video controls playsInline src={links[a.id]}/>:<p className="warning">Видео пока недоступно.</p>}<div className="adminActionRow"><button className="dangerButton" disabled={busyId===a.id} onClick={()=>deleteOne(a)}>УДАЛИТЬ ВИДЕО</button><button className="dangerOutlineButton" disabled={busyId===busyKey} onClick={()=>deleteAttempt(a.attempt_id,a.staff_name,a.created_at)}>ОЧИСТИТЬ ВСЮ ПОПЫТКУ</button></div></div>})}
   </>}
  </main>
 }
