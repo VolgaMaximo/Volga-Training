@@ -11,9 +11,11 @@ const ENTRANTES_VIDEO='https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec3
 const EXAM_VIDEO='https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec374d4a1caa748ea9358325ff/f9d66fa1f46fbaf1a2bb47e206b697f3.mp4?Expires=1789999987&Signature=jgS8WfwqDtyJmZxpC~KTVa-gPuNr4dgYmeHudbGXABPgE7GuQgQe9SgHGhUCYD6hMkokNetbt6ERZnGlsoi~cdk37f4NBxtH602hMUn1916v9rWLsSL4UevBXkK6fdnM8FtBBlM2ua9Ko8Jea4LXeAXiNrtHCk4bJVOdnJ023DJYfOQGy6XKQFsMa3Y44iwcng6Fyr7d29pCc4Q~UJeKHig13tZjKhGcUdQVpEHGyStba19pIsK78rfuN8wcU4G86zgp08WukAwYBiwEmZtGxfCZTGfuP68R-uBvJWMxvyMcJM03SVarrBhP8MP44cRTqVyK83HOaZTlrGVGxVoeKA__&Key-Pair-Id=K38HBHX5LX3X2H';
 
 export default function Home(){
-  const[entered,setEntered]=useState(false);
+  const[doorOpened,setDoorOpened]=useState(false);
+  const[authenticated,setAuthenticated]=useState(false);
   const[employees,setEmployees]=useState<Employee[]>([]);
   const[employeeId,setEmployeeId]=useState('');
+  const[staffName,setStaffName]=useState('');
   const[code,setCode]=useState('');
   const[topic,setTopic]=useState('starters');
   const[busy,setBusy]=useState(false);
@@ -21,11 +23,41 @@ export default function Home(){
   const router=useRouter();
 
   useEffect(()=>{
-    if(sessionStorage.getItem('volga_academy_entered')==='1')setEntered(true);
+    const access=sessionStorage.getItem('volga_staff_access')==='1';
+    if(access){
+      setDoorOpened(true);
+      setAuthenticated(true);
+      setEmployeeId(sessionStorage.getItem('volga_staff_id')||'');
+      setStaffName(sessionStorage.getItem('volga_staff_name')||'');
+    }
     (async()=>{if(!supabase)return;const{data}=await supabase.rpc('list_employees_public');if(Array.isArray(data))setEmployees(data as Employee[])})();
   },[]);
 
-  function openAcademy(){sessionStorage.setItem('volga_academy_entered','1');setEntered(true)}
+  function openAcademy(){setDoorOpened(true);setError('')}
+
+  async function enterAcademy(){
+    if(!employeeId||!code||!supabase)return;
+    setBusy(true);setError('');
+    const{data,error:e}=await supabase.rpc('verify_staff_access',{p_employee_id:employeeId,p_code:code});
+    setBusy(false);
+    if(e){setError('Не удалось проверить доступ. Попробуй ещё раз.');return}
+    if(!data?.ok){setError(data?.error||'Неверный PIN.');return}
+    const name=data.name||employees.find(e=>e.id===employeeId)?.name||'';
+    setStaffName(name);
+    setAuthenticated(true);
+    sessionStorage.setItem('volga_staff_access','1');
+    sessionStorage.setItem('volga_staff_id',employeeId);
+    sessionStorage.setItem('volga_staff_name',name);
+  }
+
+  function logout(){
+    sessionStorage.removeItem('volga_staff_access');
+    sessionStorage.removeItem('volga_staff_id');
+    sessionStorage.removeItem('volga_staff_name');
+    sessionStorage.removeItem('volga_attempt_id');
+    sessionStorage.removeItem('volga_exam_topic');
+    setAuthenticated(false);setDoorOpened(true);setEmployeeId('');setStaffName('');setCode('');setError('');
+  }
 
   async function start(){
     if(!employeeId||!code||!topic||!supabase)return;
@@ -42,19 +74,40 @@ export default function Home(){
     router.push(data.status==='oral'?'/oral':'/quiz');
   }
 
-  if(!entered)return <div className="academyGate">
+  if(!doorOpened)return <div className="academyGate">
     <div className="academyGateArt">
       <img src="/academy-cover.png?v=20260915" alt="VOLGA ACADEMIA — знания дают уверенность и создают лучший сервис"/>
       <button className="academyGateButton" onClick={openAcademy}>ОТКРЫТЬ ДВЕРИ АКАДЕМИИ</button>
     </div>
   </div>;
 
-  return <main>
+  if(!authenticated)return <main className="accessPage">
     <div className="brand">VOLGA ACADEMIA</div>
+    <h1>ВХОД В АКАДЕМИЮ</h1>
+    <div className="card accessCard">
+      <h2>Сотрудник</h2>
+      <p>Выбери своё имя и введи личный PIN.</p>
+      <label>Сотрудник</label>
+      <select value={employeeId} onChange={e=>setEmployeeId(e.target.value)}>
+        <option value="">Выбери своё имя</option>
+        {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
+      </select>
+      <div style={{height:14}}/>
+      <label>Личный PIN</label>
+      <input type="password" inputMode="numeric" value={code} onChange={e=>setCode(e.target.value)} placeholder="4 цифры" onKeyDown={e=>{if(e.key==='Enter')enterAcademy()}}/>
+      <div style={{height:14}}/>
+      <button disabled={!employeeId||!code||busy} onClick={enterAcademy}>{busy?'ПРОВЕРЯЕМ…':'ВОЙТИ В АКАДЕМИЮ'}</button>
+      {error&&<p className="warning">{error}</p>}
+    </div>
+    <div className="adminEntry"><Link href="/admin">АДМИНИСТРАТИВНЫЙ ВХОД</Link></div>
+  </main>;
+
+  return <main>
+    <div className="academyTopbar"><div><div className="brand">VOLGA ACADEMIA</div><div className="small">{staffName?`Сотрудник: ${staffName}`:''}</div></div><button className="logoutButton" onClick={logout}>ВЫЙТИ</button></div>
     <h1>ОБУЧЕНИЕ И ЭКЗАМЕН</h1>
 
     <div className="card introGrid">
-      <div><h2>Привет, я MILA.</h2></div>
+      <div><h2>Привет, {staffName||'это MILA'}.</h2></div>
       <div className="milaVideoWrap"><SegmentVideo src={ENTRANTES_VIDEO} start={0} end={73}/></div>
     </div>
 
@@ -90,15 +143,8 @@ export default function Home(){
         <option value="service" disabled>Сервис — скоро</option>
       </select>
       <div style={{height:14}}/>
-      <label>Сотрудник</label>
-      <select value={employeeId} onChange={e=>setEmployeeId(e.target.value)}>
-        <option value="">Выбери своё имя</option>
-        {employees.map(e=><option key={e.id} value={e.id}>{e.name}</option>)}
-      </select>
-      <div style={{height:14}}/>
-      <label>Личный PIN</label>
-      <input type="password" inputMode="numeric" value={code} onChange={e=>setCode(e.target.value)} placeholder="4 цифры"/>
-      <div style={{height:14}}/>
+      <p><b>Сотрудник:</b> {staffName}</p>
+      {!code&&<><label>Подтверди личный PIN для начала экзамена</label><input type="password" inputMode="numeric" value={code} onChange={e=>setCode(e.target.value)} placeholder="4 цифры"/><div style={{height:14}}/></>}
       <div className="warning">Одна активная попытка. Если экзамен уже начат, система вернёт тебя в неё. Новую попытку разрешает администратор.</div>
       <div style={{height:14}}/>
       <button disabled={!employeeId||!code||!topic||busy} onClick={start}>{busy?'ПРОВЕРЯЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
