@@ -56,7 +56,7 @@ export default function AdminPage(){
  async function deleteOne(a:Answer){
   if(!supabase||!confirm(`Удалить видео ${a.staff_name}: «${a.scenario_text}»? Это действие нельзя отменить.`))return;
   setBusyId(a.id);setError('');
-  const{data,e:errorEdge}=await supabase.functions.invoke('admin-recordings',{body:{action:'delete_one',code,id:a.id}});
+  const{data,error:errorEdge}=await supabase.functions.invoke('admin-recordings',{body:{action:'delete_one',code,id:a.id}});
   setBusyId('');
   if(errorEdge||!data?.ok){setError(data?.error||'Не удалось удалить видео.');return}
   setNotice('Видео удалено из хранилища и из списка.');await loadAll();
@@ -65,7 +65,7 @@ export default function AdminPage(){
   const count=answers.filter(a=>a.attempt_id===attemptId).length;
   if(!supabase||!count||!confirm(`Удалить все видео этой попытки (${count}) у ${staffName}? Это действие нельзя отменить.`))return;
   setBusyId(`attempt-${attemptId}`);setError('');
-  const{data,e:errorEdge}=await supabase.functions.invoke('admin-recordings',{body:{action:'delete_attempt',code,attempt_id:attemptId}});
+  const{data,error:errorEdge}=await supabase.functions.invoke('admin-recordings',{body:{action:'delete_attempt',code,attempt_id:attemptId}});
   setBusyId('');
   if(errorEdge||!data?.ok){setError(data?.error||'Не удалось очистить видео попытки.');return}
   setNotice(`Удалено видео: ${data.count||count}.`);await loadAll();
