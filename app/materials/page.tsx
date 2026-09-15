@@ -1,5 +1,6 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
+import {useRouter} from 'next/navigation';
 import Link from 'next/link';
 import SegmentVideo from '../../components/SegmentVideo';
 
@@ -36,8 +37,15 @@ const materials:Material[]=[
 ];
 
 export default function Materials(){
+ const router=useRouter();
+ const[ready,setReady]=useState(false);
  const[selected,setSelected]=useState('starters');
  const[activeCard,setActiveCard]=useState<Material|null>(null);
+ useEffect(()=>{
+  if(sessionStorage.getItem('volga_staff_access')!=='1'){router.replace('/');return}
+  setReady(true);
+ },[router]);
+ if(!ready)return null;
  const current=sections.find(s=>s.key===selected)||sections[0];
  return <main>
   <div className="brand">VOLGA · COCINA DEL ESTE · ОБУЧЕНИЕ</div>
