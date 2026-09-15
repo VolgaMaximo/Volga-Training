@@ -90,9 +90,11 @@ export default function Home(){
     sessionStorage.setItem('volga_attempt_id',data.attempt_id);
     sessionStorage.setItem('volga_staff_name',data.name);
     sessionStorage.setItem('volga_exam_topic',topic);
-    sessionStorage.removeItem('volga_quiz_score');
-    sessionStorage.removeItem('volga_quiz_passed');
-    sessionStorage.removeItem('volga_oral_done');
+    if(!data.resumed){
+      sessionStorage.removeItem('volga_quiz_score');
+      sessionStorage.removeItem('volga_quiz_passed');
+      sessionStorage.removeItem('volga_oral_done');
+    }
     router.push(data.status==='oral'?'/oral':'/quiz');
   }
 
