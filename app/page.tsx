@@ -7,8 +7,9 @@ import SegmentVideo from '../components/SegmentVideo';
 
 type Employee={id:string;name:string};
 
-const ENTRANTES_VIDEO='https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec374d4a1caa748ea9358325ff/f1748d211b96caf5d47f7cb7cbb8e07f.mp4?Expires=1789854140&Signature=BxZAfl37ITpacpaWdhXFnXmaJy5efusMrvSEfJSgDGOH-h1dlPJxiugS1CjrWDTBfuuCNL7x78iPT6sI8bDbtqHcoprAHnHJQ48Wm5a9Fbl7mCWd-u6~eE5iqxmp~69A1df0YO2O4-gCSi1EefRS2KWADNT1-qOlW8kJJSBcuuqCEOKB7Zx20-TFDaD1XNj4xej3UA6GDssSqcuS~ar79fhBnFoG-b~9gwKGQUPMReNuV72VVdtEZOZoxX-5LYG0FJcB-n6HwPkVSd-ijpJDPbI4sBanWaFpUy0WbDbksaCgfuf18--UwCuSjUiXaIVIuRn8s54mkfxRFcpW8SVxug__&Key-Pair-Id=K38HBHX5LX3X2H';
-const EXAM_VIDEO='https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec374d4a1caa748ea9358325ff/f9d66fa1f46fbaf1a2bb47e206b697f3.mp4?Expires=1789999987&Signature=jgS8WfwqDtyJmZxpC~KTVa-gPuNr4dgYmeHudbGXABPgE7GuQgQe9SgHGhUCYD6hMkokNetbt6ERZnGlsoi~cdk37f4NBxtH602hMUn1916v9rWLsSL4UevBXkK6fdnM8FtBBlM2ua9Ko8Jea4LXeAXiNrtHCk4bJVOdnJ023DJYfOQGy6XKQFsMa3Y44iwcng6Fyr7d29pCc4Q~UJeKHig13tZjKhGcUdQVpEHGyStba19pIsK78rfuN8wcU4G86zgp08WukAwYBiwEmZtGxfCZTGfuP68R-uBvJWMxvyMcJM03SVarrBhP8MP44cRTqVyK83HOaZTlrGVGxVoeKA__&Key-Pair-Id=K38HBHX5LX3X2H';
+const STORAGE='https://oswvsqryavzrqwbnjvbc.supabase.co/storage/v1/object/public/training-videos';
+const ENTRANTES_VIDEO=`${STORAGE}/entrantes-training.mp4`;
+const EXAM_VIDEO=`${STORAGE}/exam-rules.mp4`;
 
 export default function Home(){
   const[doorOpened,setDoorOpened]=useState(false);
