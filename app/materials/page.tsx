@@ -84,7 +84,7 @@ export default function Materials(){
   {activeCard&&<div className="cardModal" role="dialog" aria-modal="true" aria-label={activeCard.title} onClick={()=>setActiveCard(null)}>
     <button className="cardModalClose" onClick={()=>setActiveCard(null)} aria-label="Закрыть">×</button>
     <div className="cardModalInner" onClick={e=>e.stopPropagation()}>
-      <img className="cardModalImage" src={activeCard.image} alt={activeCard.title}/>
+      <img className="cardModalImage" src={`${activeCard.image}?v=20260923-2`} alt={activeCard.title}/>
     </div>
   </div>}
 
