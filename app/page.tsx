@@ -161,8 +161,7 @@ export default function Home(){
       <label>Тема экзамена</label>
       <select value={topic} onChange={e=>setTopic(e.target.value)}>
         <option value="starters">Закуски</option>
-        <option value="soups" disabled>Супы — скоро</option>
-        <option value="mains" disabled>Горячее — скоро</option>
+        <option value="soups_mains">Супы и горячее</option>
         <option value="desserts" disabled>Десерты — скоро</option>
         <option value="drinks" disabled>Напитки — скоро</option>
         <option value="service" disabled>Сервис — скоро</option>
