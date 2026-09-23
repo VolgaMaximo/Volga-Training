@@ -8,8 +8,8 @@ import SegmentVideo from '../components/SegmentVideo';
 type Employee={id:string;name:string};
 
 const STORAGE='https://oswvsqryavzrqwbnjvbc.supabase.co/storage/v1/object/public/training-videos';
-const ENTRANTES_VIDEO=`${STORAGE}/entrantes-training.mp4`;
-const EXAM_VIDEO=`${STORAGE}/exam-rules.mp4`;
+const ENTRANTES_VIDEO=`${STORAGE}/entrantes-training.mp4?v=20260923-3`;
+const EXAM_VIDEO=`${STORAGE}/exam-rules.mp4?v=20260923-3`;
 
 export default function Home(){
   const[doorOpened,setDoorOpened]=useState(false);
