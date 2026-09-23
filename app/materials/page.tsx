@@ -8,8 +8,8 @@ type Material={id:number;title:string;body:string;image:string;section:'starters
 type Section={key:string;label:string;active:boolean};
 
 const STORAGE='https://oswvsqryavzrqwbnjvbc.supabase.co/storage/v1/object/public/training-videos';
-const ENTRANTES_VIDEO=`${STORAGE}/entrantes-training.mp4`;
-const SOUPS_MAINS_VIDEO=`${STORAGE}/volga-soups-mains-training-final-under50mb.mp4`;
+const ENTRANTES_VIDEO=`${STORAGE}/entrantes-training.mp4?v=20260923-3`;
+const SOUPS_MAINS_VIDEO=`${STORAGE}/volga-soups-mains-training-final-under50mb.mp4?v=20260923-3`;
 
 const sections:Section[]=[
 {key:'starters',label:'ЗАКУСКИ',active:true},
