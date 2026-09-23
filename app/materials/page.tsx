@@ -9,7 +9,7 @@ type Section={key:string;label:string;active:boolean};
 
 const STORAGE='https://oswvsqryavzrqwbnjvbc.supabase.co/storage/v1/object/public/training-videos';
 const ENTRANTES_VIDEO=`${STORAGE}/entrantes-training.mp4`;
-const SOUPS_MAINS_VIDEO=`${STORAGE}/volga-soups-mains-training-final.mp4`;
+const SOUPS_MAINS_VIDEO=`${STORAGE}/volga-soups-mains-training-final-under50mb.mp4`;
 
 const sections:Section[]=[
 {key:'starters',label:'ЗАКУСКИ',active:true},
