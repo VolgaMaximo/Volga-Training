@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Download source video
         run: |
-          curl -L --fail --retry 3 'https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec374d4a1caa748ea9358325ff/f1748d211b96caf5d47f7cb7cbb8e07f.mp4?Expires=1790777862&Signature=ZY3Mj24hI3WgiALbDUkC7vsSlwUQtKmWulheNXU97BehjVyZ46mbiOInDbsI13~J01BkIbHcBt85r5jvugvbsobNEme-sD7BfmJvef2yChD9kdrUZ-p4BKYA2S1CJyrGya5hiEmrYqcEMGKKyGDtxNZTXyyC7Elw-EZ6wufWSgagEWoTvndUvashOVHajy2eOMaOSB-zTvhDf~sz9etiPRK5xCfJLYmcLmn2Fb3H9WdMAemi0GrItIzEzw9s~z1utPBL7rZJAU1tCH87Cs9iKp3WuMISDwkNEZlG~OfWWd4fg05~NER4eS3FDWR9sOWxlOXM-ZLAXHeuM~A__&Key-Pair-Id=K38HBHX5LX3X2H' -o source.mp4
+          curl -L --fail --retry 3 'https://files2.heygen.ai/aws_pacific/avatar_tmp/c194aaec374d4a1caa748ea9358325ff/f1748d211b96caf5d47f7cb7cbb8e07f.mp4?Expires=1790777862&Signature=ZY3Mj24hI3WgiALbDUkC7vsSlwUQtKmWulheNXU97BehjVyZ46mbiOInDbsI13~J01BkIbHcBt85r5jvugvbsobNEme-sD7BfmJvef2yChD9kdrUZ-p4BKYA2S1CJyrGya5hiEmrYqcEMGKKyGDtxNZTXyyC7Elw-EZ6wufWSgagEWoTvndUvashOVHajy2eOMaOSB-zTvhDf~sz9etiPRKaTJHyP5xCfJLYmcLmn2Fb3H9WdMAemi0GrItIzEzw9s~z1utPBL7rZJAU1tCH87Cs9iKp3WuMISDwkNEZlG~OfWWd4fg05~NER4eS3FDWR9sOWxlOXM-ZLAXHeuM~A__&Key-Pair-Id=K38HBHX5LX3X2H' -o source.mp4
       - name: Compress under 50 MB
         run: |
           ffmpeg -y -i source.mp4 -c:v libx264 -b:v 560k -maxrate 620k -bufsize 1120k -preset medium -pix_fmt yuv420p -c:a aac -b:a 64k -movflags +faststart entrantes-training.mp4
