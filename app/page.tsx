@@ -168,7 +168,7 @@ export default function Home(){
       </select>
       <div style={{height:14}}/>
       <p><b>Сотрудник:</b> {staffName}</p>
-      <div className="warning">Одна активная попытка. Если экзамен уже начат, система вернёт тебя в неё. Новую попытку разрешает администратор.</div>
+      <div className="warning">По каждой теме доступно до 3 попыток письменного теста. Если экзамен уже начат, система вернёт тебя в него. Начиная с 4-й попытки требуется разрешение администратора.</div>
       <div style={{height:14}}/>
       <button disabled={!sessionToken||!topic||busy} onClick={start}>{busy?'ОТКРЫВАЕМ…':'НАЧАТЬ ЭКЗАМЕН'}</button>
       {error&&<p className="warning">{error}</p>}
