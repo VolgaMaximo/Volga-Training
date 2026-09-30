@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
 import SegmentVideo from '../../components/SegmentVideo';
+import CheatSheet from '../../components/CheatSheet';
 
 type Material={id:number;title:string;body:string;image:string;section:'starters'|'soups'|'mains'};
 type Section={key:string;label:string;active:boolean};
@@ -17,7 +18,8 @@ const sections:Section[]=[
 {key:'mains',label:'ГОРЯЧЕЕ',active:true},
 {key:'desserts',label:'ДЕСЕРТЫ',active:false},
 {key:'drinks',label:'НАПИТКИ',active:false},
-{key:'service',label:'СЕРВИС',active:false}
+{key:'service',label:'СЕРВИС',active:false},
+{key:'cheatsheet',label:'ШПАРГАЛКА',active:true}
 ];
 
 const materials:Material[]=[
@@ -63,7 +65,8 @@ export default function Materials(){
   <h1>УЧЕБНЫЕ МАТЕРИАЛЫ</h1>
   <p>Выбери раздел и повтори материал перед экзаменом.</p>
   <div className="sectionTabs">{sections.map(s=><button key={s.key} className={`sectionTab ${selected===s.key?'selected':''}`} disabled={!s.active} onClick={()=>s.active&&setSelected(s.key)}>{s.label}{!s.active&&<span className="comingSoon">СКОРО</span>}</button>)}</div>
-  <div className="sectionHeader"><div><span className="sectionEyebrow">ТЕКУЩИЙ РАЗДЕЛ</span><h2>{current.label}</h2></div><span className="sectionCount">{currentMaterials.length} КАРТОЧЕК</span></div>
+  {selected!=='cheatsheet'&&<div className="sectionHeader"><div><span className="sectionEyebrow">ТЕКУЩИЙ РАЗДЕЛ</span><h2>{current.label}</h2></div><span className="sectionCount">{currentMaterials.length} КАРТОЧЕК</span></div>}
+  {selected==='cheatsheet'&&<div className="sectionHeader"><div><span className="sectionEyebrow">ПОДГОТОВКА К УСТНОЙ ЧАСТИ</span><h2>ШПАРГАЛКА</h2></div></div>}
 
   {selected==='starters'&&<div className="card">
     <span className="sectionEyebrow">ВИДЕОУРОК</span>
@@ -77,9 +80,9 @@ export default function Materials(){
     <SegmentVideo src={SOUPS_MAINS_VIDEO} className="trainingVideo"/>
   </div>}
 
-  <div className="materialsGrid">{currentMaterials.map(m=><div className="card materialCard" key={m.id}>
+  {selected==='cheatsheet'?<CheatSheet/>:<div className="materialsGrid">{currentMaterials.map(m=><div className="card materialCard" key={m.id}>
     <button className="materialTitle" onClick={()=>setActiveCard(m)}>{m.title}<span>↗</span></button>
-  </div>)}</div>
+  </div>)}</div>}
 
   {activeCard&&<div className="cardModal" role="dialog" aria-modal="true" aria-label={activeCard.title} onClick={()=>setActiveCard(null)}>
     <button className="cardModalClose" onClick={()=>setActiveCard(null)} aria-label="Закрыть">×</button>
