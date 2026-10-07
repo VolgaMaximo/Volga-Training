@@ -162,6 +162,7 @@ export default function Home(){
       <select value={topic} onChange={e=>setTopic(e.target.value)}>
         <option value="starters">Закуски</option>
         <option value="soups_mains">Супы и горячее</option>
+        <option value="seasonal">Сезонное меню · Осень фантазий</option>
         <option value="desserts" disabled>Десерты — скоро</option>
         <option value="drinks" disabled>Напитки — скоро</option>
         <option value="service" disabled>Сервис — скоро</option>
